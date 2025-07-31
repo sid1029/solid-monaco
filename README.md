@@ -59,6 +59,9 @@ The `MonacoEditor` component accepts the following props:
 | `onChange`         | `(value: string, event: editor.IModelContentChangedEvent) => void` | -            | Callback triggered when the content of the editor changes.                     |
 | `onMount`          | `(monaco: Monaco, editor: editor.IStandaloneCodeEditor) => void`   | -            | Callback triggered when the editor mounts.                                     |
 | `onBeforeUnmount`  | `(monaco: Monaco, editor: editor.IStandaloneCodeEditor) => void`   | -            | Callback triggered before the editor unmounts.                                 |
+| **`line`**         | `number`                                                           | -            | **NEW:** Jump to specific line number in the editor.                          |
+| **`beforeMount`**  | `(monaco: Monaco) => void`                                         | -            | **NEW:** Callback triggered before editor creation for setup.                 |
+| **`onValidate`**   | `(markers: editor.IMarker[]) => void`                             | -            | **NEW:** Callback triggered when validation markers change.                   |
 
 ### Getting Monaco and Editor Instances
 
@@ -78,6 +81,98 @@ function MyEditor() {
       value="console.log('Hello World');"
       onMount={handleMount}
     />
+  );
+}
+```
+
+### New Enhanced Features
+
+#### Line Positioning
+
+Jump to a specific line number in the editor:
+
+```jsx
+import { MonacoEditor } from 'solid-monaco';
+import { createSignal } from 'solid-js';
+
+function MyEditor() {
+  const [currentLine, setCurrentLine] = createSignal(42);
+
+  return (
+    <div>
+      <button onClick={() => setCurrentLine(100)}>Go to line 100</button>
+      <MonacoEditor
+        language="javascript"
+        value="// Line 1\n// Line 2\n// ..."
+        line={currentLine()}
+      />
+    </div>
+  );
+}
+```
+
+#### Pre-Editor Setup
+
+Use the `beforeMount` callback to configure Monaco before the editor is created:
+
+```jsx
+import { MonacoEditor } from 'solid-monaco';
+
+function MyEditor() {
+  const handleBeforeMount = (monaco) => {
+    // Configure Monaco before editor creation
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: false,
+    });
+    
+    // Register custom themes, languages, etc.
+    monaco.editor.defineTheme('myCustomTheme', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#1e1e1e',
+      }
+    });
+  };
+
+  return (
+    <MonacoEditor
+      language="javascript"
+      value="console.log('Hello World');"
+      beforeMount={handleBeforeMount}
+      theme="myCustomTheme"
+    />
+  );
+}
+```
+
+#### Validation Markers
+
+Monitor validation errors and warnings in real-time:
+
+```jsx
+import { MonacoEditor } from 'solid-monaco';
+import { createSignal } from 'solid-js';
+
+function MyEditor() {
+  const [errors, setErrors] = createSignal([]);
+
+  const handleValidate = (markers) => {
+    setErrors(markers.filter(marker => marker.severity === 8)); // Errors only
+    console.log('Validation markers:', markers);
+  };
+
+  return (
+    <div>
+      <div>Errors: {errors().length}</div>
+      <MonacoEditor
+        language="typescript"
+        value="const x: string = 123; // Type error"
+        onValidate={handleValidate}
+      />
+    </div>
   );
 }
 ```
