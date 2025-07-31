@@ -295,7 +295,7 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
   return (
     <MonacoContainer class={props.class} width={props.width} height={props.height}>
       {!editor() && <Loader>{props.loadingState}</Loader>}
-      <div style={{ width: '100%' }} ref={containerRef!} />
+      <div style={{ width: '100%' }} ref={containerRef} />
     </MonacoContainer>
   )
 }

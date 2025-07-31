@@ -85,7 +85,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
 
       // Setup validation subscription if onValidate is provided
       if (props.onValidate) {
-        validationSubscription = monaco.editor.onDidChangeMarkers((uris: monacoEditor.Uri[]) => {
+        validationSubscription = monaco.editor.onDidChangeMarkers((uris: readonly monacoEditor.Uri[]) => {
           const editorUri = editor.getModel()?.uri
           if (editorUri) {
             const currentEditorHasMarkerChanges = uris.find((uri: monacoEditor.Uri) => uri.path === editorUri.path)
@@ -247,7 +247,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
   return (
     <MonacoContainer class={props.class} width={props.width} height={props.height}>
       {!editor() && <Loader>{props.loadingState}</Loader>}
-      <div style={{ width: '100%' }} ref={containerRef!} />
+      <div style={{ width: '100%' }} ref={containerRef} />
     </MonacoContainer>
   )
 }
