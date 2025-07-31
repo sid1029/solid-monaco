@@ -17,8 +17,8 @@
       }
     }
   },
-  "postCreateCommand": "pnpm install",
-  "remoteUser": "node",
+  "postCreateCommand": "corepack enable pnpm && pnpm install",
+  "remoteUser": "root",
   "workspaceFolder": "/workspace",
   "mounts": [
     "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
