@@ -9,6 +9,7 @@ import { LoaderParams } from './types'
 const viewStates = new Map()
 
 export interface MonacoEditorProps {
+  // Existing props
   language?: string
   value?: string
   loadingState?: JSX.Element
@@ -24,6 +25,11 @@ export interface MonacoEditorProps {
   onChange?: (value: string, event: monacoEditor.editor.IModelContentChangedEvent) => void
   onMount?: (monaco: Monaco, editor: monacoEditor.editor.IStandaloneCodeEditor) => void
   onBeforeUnmount?: (monaco: Monaco, editor: monacoEditor.editor.IStandaloneCodeEditor) => void
+  
+  // NEW: Enhanced props for better monaco-react compatibility
+  line?: number                    // Jump to specific line number
+  beforeMount?: (monaco: Monaco) => void  // Pre-editor setup callback
+  onValidate?: (markers: monacoEditor.editor.IMarker[]) => void  // Validation markers callback
 }
 
 export const MonacoEditor = (inputProps: MonacoEditorProps) => {
@@ -38,13 +44,14 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
     inputProps,
   )
 
-  let containerRef: HTMLDivElement
+  let containerRef: HTMLDivElement | undefined
 
   const [monaco, setMonaco] = createSignal<Monaco>()
   const [editor, setEditor] = createSignal<monacoEditor.editor.IStandaloneCodeEditor>()
 
   let abortInitialization: (() => void) | undefined
   let monacoOnChangeSubscription: any
+  let validationSubscription: monacoEditor.IDisposable | undefined
   let isOnChangeSuppressed = false
 
   onMount(async () => {
@@ -55,16 +62,40 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
 
     try {
       const monaco = await loadMonaco
+      
+      // Call beforeMount callback before editor creation
+      props.beforeMount?.(monaco)
+      
       const editor = createEditor(monaco)
       setMonaco(monaco)
       setEditor(editor)
+      
+      // Handle initial line positioning
+      if (props.line !== undefined) {
+        editor.revealLine(props.line)
+      }
+      
       props.onMount?.(monaco, editor)
 
-      monacoOnChangeSubscription = editor.onDidChangeModelContent(event => {
+      monacoOnChangeSubscription = editor.onDidChangeModelContent((event: monacoEditor.editor.IModelContentChangedEvent) => {
         if (!isOnChangeSuppressed) {
           props.onChange?.(editor.getValue(), event)
         }
       })
+
+      // Setup validation subscription if onValidate is provided
+      if (props.onValidate) {
+        validationSubscription = monaco.editor.onDidChangeMarkers((uris: monacoEditor.Uri[]) => {
+          const editorUri = editor.getModel()?.uri
+          if (editorUri) {
+            const currentEditorHasMarkerChanges = uris.find((uri: monacoEditor.Uri) => uri.path === editorUri.path)
+            if (currentEditorHasMarkerChanges) {
+              const markers = monaco.editor.getModelMarkers({ resource: editorUri })
+              props.onValidate!(markers)
+            }
+          }
+        })
+      }
     } catch (error: any) {
       if (error?.type === 'cancelation') {
         return
@@ -83,6 +114,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
 
     props.onBeforeUnmount?.(monaco()!, _editor)
     monacoOnChangeSubscription?.dispose()
+    validationSubscription?.dispose()
     _editor.getModel()?.dispose()
     _editor.dispose()
   })
@@ -90,7 +122,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
   createEffect(
     on(
       () => props.value,
-      value => {
+      (value: string | undefined) => {
         const _editor = editor()
         if (!_editor || typeof value === 'undefined') {
           return
@@ -123,7 +155,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
   createEffect(
     on(
       () => props.options,
-      options => {
+      (options: monacoEditor.editor.IStandaloneEditorConstructionOptions | undefined) => {
         editor()?.updateOptions(options ?? {})
       },
       { defer: true },
@@ -133,7 +165,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
   createEffect(
     on(
       () => props.theme,
-      theme => {
+      (theme: monacoEditor.editor.BuiltinTheme | string) => {
         monaco()?.editor.setTheme(theme)
       },
       { defer: true },
@@ -143,7 +175,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
   createEffect(
     on(
       () => props.language,
-      language => {
+      (language: string | undefined) => {
         const model = editor()?.getModel()
         if (!language || !model) {
           return
@@ -158,7 +190,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
   createEffect(
     on(
       () => props.path,
-      (path, prevPath) => {
+      (path: string | undefined, prevPath: string | undefined) => {
         const _monaco = monaco()
         if (!_monaco) {
           return
@@ -180,7 +212,25 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
     ),
   )
 
+  // NEW: Line positioning effect
+  createEffect(
+    on(
+      () => props.line,
+      (line: number | undefined) => {
+        const currentEditor = editor()
+        if (line !== undefined && currentEditor) {
+          currentEditor.revealLine(line)
+        }
+      },
+      { defer: true },
+    ),
+  )
+
   const createEditor = (monaco: Monaco) => {
+    if (!containerRef) {
+      throw new Error('Container ref not available')
+    }
+    
     const model = getOrCreateModel(monaco, props.value ?? '', props.language, props.path)
 
     return monaco.editor.create(
