@@ -9,6 +9,7 @@ import { LoaderParams } from './types'
 const viewStates = new Map()
 
 export interface MonacoDiffEditorProps {
+  // Content props
   original?: string
   modified?: string
 
@@ -18,18 +19,24 @@ export interface MonacoDiffEditorProps {
   originalPath?: string
   modifiedPath?: string
 
+  // UI props
   loadingState?: JSX.Element
   class?: string
   theme?: monacoEditor.editor.BuiltinTheme | string
   overrideServices?: monacoEditor.editor.IEditorOverrideServices
   width?: string
   height?: string
-  options?: monacoEditor.editor.IStandaloneEditorConstructionOptions
+  options?: monacoEditor.editor.IStandaloneDiffEditorConstructionOptions  // FIXED: Use correct diff editor options type
   saveViewState?: boolean
   loaderParams?: LoaderParams
+  
+  // Callback props
   onChange?: (value: string) => void
   onMount?: (monaco: Monaco, editor: monacoEditor.editor.IStandaloneDiffEditor) => void
   onBeforeUnmount?: (monaco: Monaco, editor: monacoEditor.editor.IStandaloneDiffEditor) => void
+  
+  // NEW: Enhanced props for feature parity
+  beforeMount?: (monaco: Monaco) => void  // Pre-editor setup callback
 }
 
 export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
@@ -44,13 +51,13 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
     inputProps,
   )
 
-  let containerRef: HTMLDivElement
+  let containerRef: HTMLDivElement | undefined
 
   const [monaco, setMonaco] = createSignal<Monaco>()
   const [editor, setEditor] = createSignal<monacoEditor.editor.IStandaloneDiffEditor>()
 
   let abortInitialization: (() => void) | undefined
-  let monacoOnChangeSubscription: any
+  let monacoOnChangeSubscription: monacoEditor.IDisposable | undefined
   let isOnChangeSuppressed = false
 
   onMount(async () => {
@@ -61,6 +68,10 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
 
     try {
       const monaco = await loadMonaco
+      
+      // Call beforeMount callback before editor creation
+      props.beforeMount?.(monaco)
+      
       const editor = createEditor(monaco)
       setMonaco(monaco)
       setEditor(editor)
@@ -97,7 +108,7 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
   createEffect(
     on(
       () => props.modified,
-      modified => {
+      (modified: string | undefined) => {
         const _editor = editor()?.getModifiedEditor()
         if (!_editor || typeof modified === 'undefined') {
           return
@@ -130,7 +141,7 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
   createEffect(
     on(
       () => props.original,
-      original => {
+      (original: string | undefined) => {
         const _editor = editor()?.getOriginalEditor()
         if (!_editor || typeof original === 'undefined') {
           return
@@ -147,7 +158,7 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
   createEffect(
     on(
       () => props.options,
-      options => {
+      (options: monacoEditor.editor.IStandaloneDiffEditorConstructionOptions | undefined) => {
         editor()?.updateOptions(options ?? {})
       },
       { defer: true },
@@ -157,7 +168,7 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
   createEffect(
     on(
       () => props.theme,
-      theme => {
+      (theme: monacoEditor.editor.BuiltinTheme | string) => {
         monaco()?.editor.setTheme(theme)
       },
       { defer: true },
@@ -167,7 +178,7 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
   createEffect(
     on(
       () => props.originalLanguage,
-      language => {
+      (language: string | undefined) => {
         const model = editor()?.getModel()
         if (!language || !model) {
           return
@@ -182,7 +193,7 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
   createEffect(
     on(
       () => props.modifiedLanguage,
-      language => {
+      (language: string | undefined) => {
         const model = editor()?.getModel()
         if (!language || !model) {
           return
@@ -247,6 +258,10 @@ export const MonacoDiffEditor = (inputProps: MonacoDiffEditorProps) => {
   )
 
   const createEditor = (monaco: Monaco) => {
+    if (!containerRef) {
+      throw new Error('Container ref not available')
+    }
+    
     const originalModel = getOrCreateModel(
       monaco,
       props.original ?? '',

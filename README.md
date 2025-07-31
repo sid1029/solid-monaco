@@ -218,11 +218,12 @@ The `MonacoDiffEditor` component accepts the following props:
 | `overrideServices` | `object`                                                         | -            | Services to override the default ones provided by Monaco.              |
 | `width`            | `string`                                                         | `"100%"`     | Width of the diff editor container.                                    |
 | `height`           | `string`                                                         | `"100%"`     | Height of the diff editor container.                                   |
-| `options`          | `object`                                                         | -            | Additional options for the Monaco diff editor.                         |
+| `options`          | `IStandaloneDiffEditorConstructionOptions`                      | -            | **FIXED:** Correct diff editor options type (was incorrectly using regular editor options). |
 | `saveViewState`    | `boolean`                                                        | `true`       | Whether to save the model view state.                                  |
 | `onChange`         | `(value: string) => void`                                        | -            | Callback triggered when the content of the modified editor changes.    |
 | `onMount`          | `(monaco: Monaco, editor: editor.IStandaloneDiffEditor) => void` | -            | Callback triggered when the diff editor mounts.                        |
 | `onBeforeUnmount`  | `(monaco: Monaco, editor: editor.IStandaloneDiffEditor) => void` | -            | Callback triggered before the diff editor unmounts.                    |
+| **`beforeMount`**  | `(monaco: Monaco) => void`                                       | -            | **NEW:** Callback triggered before diff editor creation for setup.    |
 
 ## Contributing
 
