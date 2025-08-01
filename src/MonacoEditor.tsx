@@ -1,5 +1,5 @@
 import { createSignal, createEffect, onCleanup, JSX, onMount, mergeProps, on } from 'solid-js'
-import * as monacoEditor from 'monaco-editor'
+import type * as monacoEditor from 'monaco-editor'
 import loader, { Monaco } from '@monaco-editor/loader'
 import { Loader } from './Loader'
 import { MonacoContainer } from './MonacoContainer'
@@ -55,7 +55,11 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
   let isOnChangeSuppressed = false
 
   onMount(async () => {
-    loader.config(inputProps.loaderParams ?? { monaco: monacoEditor })
+    loader.config(inputProps.loaderParams ?? {
+      paths: {
+        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.48.0/min/vs'
+      }
+    })
     const loadMonaco = loader.init()
 
     abortInitialization = () => loadMonaco.cancel()
