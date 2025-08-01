@@ -9,9 +9,9 @@ import { LoaderParams } from './types'
 const viewStates = new Map()
 
 export interface MonacoEditorProps {
-  // Existing props
   language?: string
   value?: string
+  line?: number
   loadingState?: JSX.Element
   class?: string
   theme?: monacoEditor.editor.BuiltinTheme | string
@@ -23,13 +23,10 @@ export interface MonacoEditorProps {
   saveViewState?: boolean
   loaderParams?: LoaderParams
   onChange?: (value: string, event: monacoEditor.editor.IModelContentChangedEvent) => void
+  onBeforeMount?: (monaco: Monaco) => void
   onMount?: (monaco: Monaco, editor: monacoEditor.editor.IStandaloneCodeEditor) => void
   onBeforeUnmount?: (monaco: Monaco, editor: monacoEditor.editor.IStandaloneCodeEditor) => void
-  
-  // NEW: Enhanced props for better monaco-react compatibility
-  line?: number                    // Jump to specific line number
-  beforeMount?: (monaco: Monaco) => void  // Pre-editor setup callback
-  onValidate?: (markers: monacoEditor.editor.IMarker[]) => void  // Validation markers callback
+  onValidate?: (markers: monacoEditor.editor.IMarker[]) => void
 }
 
 export const MonacoEditor = (inputProps: MonacoEditorProps) => {
@@ -44,7 +41,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
     inputProps,
   )
 
-  let containerRef: HTMLDivElement | undefined
+  let containerRef: HTMLDivElement
 
   const [monaco, setMonaco] = createSignal<Monaco>()
   const [editor, setEditor] = createSignal<monacoEditor.editor.IStandaloneCodeEditor>()
@@ -68,7 +65,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
       const monaco = await loadMonaco
       
       // Call beforeMount callback before editor creation
-      props.beforeMount?.(monaco)
+      props.onBeforeMount?.(monaco)
       
       const editor = createEditor(monaco)
       setMonaco(monaco)
@@ -216,7 +213,6 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
     ),
   )
 
-  // NEW: Line positioning effect
   createEffect(
     on(
       () => props.line,
@@ -230,15 +226,11 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
     ),
   )
 
-  const createEditor = (monaco: Monaco) => {
-    if (!containerRef) {
-      throw new Error('Container ref not available')
-    }
-    
+  const createEditor = (monaco: Monaco) => {    
     const model = getOrCreateModel(monaco, props.value ?? '', props.language, props.path)
 
     return monaco.editor.create(
-      containerRef,
+      containerRef!,
       {
         model: model,
         automaticLayout: true,
@@ -251,7 +243,7 @@ export const MonacoEditor = (inputProps: MonacoEditorProps) => {
   return (
     <MonacoContainer class={props.class} width={props.width} height={props.height}>
       {!editor() && <Loader>{props.loadingState}</Loader>}
-      <div style={{ width: '100%' }} ref={containerRef} />
+      <div style={{ width: '100%' }} ref={containerRef!} />
     </MonacoContainer>
   )
 }
