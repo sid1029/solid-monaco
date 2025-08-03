@@ -229,6 +229,7 @@ The `MonacoDiffEditor` component accepts the following props:
 The library supports both CDN and local asset loading strategies.
 
 #### CDN Loading (Default)
+
 ```jsx
 // Uses CDN by default - no configuration needed
 <MonacoEditor value={code()} language="javascript" />
@@ -243,7 +244,7 @@ Ensure `monaco-editor` is a regular dependency (not devDependency) in your `pack
 ```json
 {
   "dependencies": {
-    "monaco-editor": "^0.45.0",
+    "monaco-editor": "^0.48.0",
     "solid-monaco": "^0.x.x"
   }
 }
@@ -255,10 +256,14 @@ Create environment-specific configurations:
 
 ```bash
 # .env (development)
+# This allows vite to serve monaco assets directly from
+# node_modules when in dev mode.
 VITE_MONACO_ASSETS_PATH=/node_modules/monaco-editor/dev/vs
 
 # .env.production
-VITE_MONACO_ASSETS_PATH=/assets/monaco-assets/vs
+# Configure the path where minified monaco assets will be
+# found. See `monacoAssetsPlugin` below.
+VITE_MONACO_ASSETS_PATH=/monaco-assets/vs
 ```
 
 **3. Vite Configuration**
@@ -267,31 +272,31 @@ Add a custom plugin to copy Monaco assets during build:
 
 ```typescript
 // vite.config.ts
-import { cpSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { defineConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
+import { cpSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { defineConfig } from 'vite'
+import solidPlugin from 'vite-plugin-solid'
 
 const monacoAssetsPlugin = () => {
   return {
-    name: 'monaco-assets',
+    name: 'monaco-assets-plugin',
     generateBundle() {
-      // Copy Monaco Editor assets to build directory
-      const monacoSrc = join(process.cwd(), 'node_modules/monaco-editor/min/vs');
-      const buildDest = join(process.cwd(), 'build/assets/monaco-assets/vs');
+      // Copy Monaco Editor assets to build output directory
+      const monacoSrc = join(process.cwd(), 'node_modules/monaco-editor/min/vs')
+      const buildDest = join(process.cwd(), 'dist/monaco-assets/vs')
 
       if (existsSync(monacoSrc)) {
-        cpSync(monacoSrc, buildDest, { recursive: true });
-        console.log('✓ Monaco Editor assets copied to build directory');
+        cpSync(monacoSrc, buildDest, { recursive: true })
+        console.log('✓ Monaco Editor assets copied to dist directory')
       }
     },
-  };
-};
+  }
+}
 
 export default defineConfig({
   plugins: [solidPlugin(), monacoAssetsPlugin()],
   // ... other config
-});
+})
 ```
 
 **4. Component Usage**
@@ -299,17 +304,17 @@ export default defineConfig({
 Use the environment variable to configure asset loading:
 
 ```jsx
-import { MonacoDiffEditor } from 'solid-monaco';
+import { MonacoDiffEditor } from 'solid-monaco'
 
 function MyDiffEditor() {
-  const configureDiffEditor = (monaco) => {
+  const configureDiffEditor = monaco => {
     // Configure JSON language features
     monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
       validate: true,
       allowComments: false,
       schemas: [],
       enableSchemaRequest: false,
-    });
+    })
 
     // Configure JSON formatting
     monaco.languages.json.jsonDefaults.setModeConfiguration({
@@ -323,13 +328,13 @@ function MyDiffEditor() {
       foldingRanges: true,
       diagnostics: true,
       selectionRanges: true,
-    });
-  };
+    })
+  }
 
   return (
     <MonacoDiffEditor
-      original={originalConfig()}
-      modified={modifiedConfig()}
+      original={originalContent}
+      modified={modifiedContent}
       originalLanguage="json"
       modifiedLanguage="json"
       height="100%"
@@ -357,7 +362,7 @@ function MyDiffEditor() {
         },
       }}
     />
-  );
+  )
 }
 ```
 
@@ -380,7 +385,7 @@ export default defineConfig({
       },
     },
   },
-});
+})
 ```
 
 ### Troubleshooting
@@ -388,16 +393,19 @@ export default defineConfig({
 #### Common Issues
 
 **Monaco assets not loading in production:**
+
 - Ensure `monaco-editor` is in `dependencies`, not `devDependencies`
 - Verify the Vite plugin is copying assets to the correct build directory
 - Check that `VITE_MONACO_ASSETS_PATH` matches your actual asset path
 
 **Large bundle size:**
+
 - Use `import type` for Monaco types to avoid bundling the entire library
 - Configure bundle splitting to separate Monaco into its own chunk
 - Consider lazy loading Monaco for non-critical editor instances
 
 **Web workers failing:**
+
 - Ensure web worker files are accessible at the configured asset path
 - Check browser console for 404 errors on worker files
 - Verify CORS settings if serving assets from a different domain
