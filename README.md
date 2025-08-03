@@ -35,10 +35,10 @@ Basic usage:
 You can import and use the `MonacoEditor` component in your Solid application:
 
 ```jsx
-import { MonacoEditor } from 'solid-monaco'
+import { MonacoEditor } from 'solid-monaco';
 
 function MyEditor() {
-  return <MonacoEditor language="javascript" value="console.log('Hello World');" />
+  return <MonacoEditor language="javascript" value="console.log('Hello World');" />;
 }
 ```
 
@@ -71,16 +71,16 @@ The `MonacoEditor` component accepts the following props:
 You can get instances of both `monaco` and the `editor` by using the `onMount` callback:
 
 ```jsx
-import { MonacoEditor } from 'solid-monaco'
+import { MonacoEditor } from 'solid-monaco';
 
 function MyEditor() {
   const handleMount = (monaco, editor) => {
     // Use monaco and editor instances here
-  }
+  };
 
   return (
     <MonacoEditor language="javascript" value="console.log('Hello World');" onMount={handleMount} />
-  )
+  );
 }
 ```
 
@@ -89,11 +89,11 @@ function MyEditor() {
 Jump to a specific line number in the editor:
 
 ```jsx
-import { MonacoEditor } from 'solid-monaco'
-import { createSignal } from 'solid-js'
+import { MonacoEditor } from 'solid-monaco';
+import { createSignal } from 'solid-js';
 
 function MyEditor() {
-  const [currentLine, setCurrentLine] = createSignal(42)
+  const [currentLine, setCurrentLine] = createSignal(42);
 
   return (
     <div>
@@ -104,7 +104,7 @@ function MyEditor() {
         line={currentLine()}
       />
     </div>
-  )
+  );
 }
 ```
 
@@ -113,7 +113,7 @@ function MyEditor() {
 Use the `beforeMount` callback to configure Monaco before the editor is created:
 
 ```jsx
-import { MonacoEditor } from 'solid-monaco'
+import { MonacoEditor } from 'solid-monaco';
 
 function MyEditor() {
   const handleBeforeMount = monaco => {
@@ -121,7 +121,7 @@ function MyEditor() {
     monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
       noSemanticValidation: true,
       noSyntaxValidation: false,
-    })
+    });
 
     // Register custom themes, languages, etc.
     monaco.editor.defineTheme('myCustomTheme', {
@@ -131,8 +131,8 @@ function MyEditor() {
       colors: {
         'editor.background': '#1e1e1e',
       },
-    })
-  }
+    });
+  };
 
   return (
     <MonacoEditor
@@ -141,7 +141,7 @@ function MyEditor() {
       beforeMount={handleBeforeMount}
       theme="myCustomTheme"
     />
-  )
+  );
 }
 ```
 
@@ -150,16 +150,16 @@ function MyEditor() {
 Monitor validation errors and warnings in real-time:
 
 ```jsx
-import { MonacoEditor } from 'solid-monaco'
-import { createSignal } from 'solid-js'
+import { MonacoEditor } from 'solid-monaco';
+import { createSignal } from 'solid-js';
 
 function MyEditor() {
-  const [errors, setErrors] = createSignal([])
+  const [errors, setErrors] = createSignal([]);
 
   const handleValidate = markers => {
-    setErrors(markers.filter(marker => marker.severity === 8)) // Errors only
-    console.log('Validation markers:', markers)
-  }
+    setErrors(markers.filter(marker => marker.severity === 8)); // Errors only
+    console.log('Validation markers:', markers);
+  };
 
   return (
     <div>
@@ -170,7 +170,7 @@ function MyEditor() {
         onValidate={handleValidate}
       />
     </div>
-  )
+  );
 }
 ```
 
@@ -183,7 +183,7 @@ For a side-by-side comparison view of code, the package provides a `MonacoDiffEd
 You can incorporate the `MonacoDiffEditor` component into your Solid application:
 
 ```jsx
-import { MonacoDiffEditor } from 'solid-monaco'
+import { MonacoDiffEditor } from 'solid-monaco';
 
 function MyDiffEditor() {
   return (
@@ -193,7 +193,7 @@ function MyDiffEditor() {
       originalLanguage="javascript"
       modifiedLanguage="javascript"
     />
-  )
+  );
 }
 ```
 
@@ -272,31 +272,31 @@ Add a custom plugin to copy Monaco assets during build:
 
 ```typescript
 // vite.config.ts
-import { cpSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
-import { defineConfig } from 'vite'
-import solidPlugin from 'vite-plugin-solid'
+import { cpSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { defineConfig } from 'vite';
+import solidPlugin from 'vite-plugin-solid';
 
 const monacoAssetsPlugin = () => {
   return {
     name: 'monaco-assets-plugin',
     generateBundle() {
       // Copy Monaco Editor assets to build output directory
-      const monacoSrc = join(process.cwd(), 'node_modules/monaco-editor/min/vs')
-      const buildDest = join(process.cwd(), 'dist/monaco-assets/vs')
+      const monacoSrc = join(process.cwd(), 'node_modules/monaco-editor/min/vs');
+      const buildDest = join(process.cwd(), 'dist/monaco-assets/vs');
 
       if (existsSync(monacoSrc)) {
-        cpSync(monacoSrc, buildDest, { recursive: true })
-        console.log('✓ Monaco Editor assets copied to dist directory')
+        cpSync(monacoSrc, buildDest, { recursive: true });
+        console.log('✓ Monaco Editor assets copied to dist directory');
       }
     },
-  }
-}
+  };
+};
 
 export default defineConfig({
   plugins: [solidPlugin(), monacoAssetsPlugin()],
   // ... other config
-})
+});
 ```
 
 **4. Component Usage**
@@ -304,7 +304,7 @@ export default defineConfig({
 Use the environment variable to configure asset loading:
 
 ```jsx
-import { MonacoDiffEditor } from 'solid-monaco'
+import { MonacoDiffEditor } from 'solid-monaco';
 
 function MyDiffEditor() {
   const configureDiffEditor = monaco => {
@@ -314,7 +314,7 @@ function MyDiffEditor() {
       allowComments: false,
       schemas: [],
       enableSchemaRequest: false,
-    })
+    });
 
     // Configure JSON formatting
     monaco.languages.json.jsonDefaults.setModeConfiguration({
@@ -328,8 +328,8 @@ function MyDiffEditor() {
       foldingRanges: true,
       diagnostics: true,
       selectionRanges: true,
-    })
-  }
+    });
+  };
 
   return (
     <MonacoDiffEditor
@@ -362,7 +362,7 @@ function MyDiffEditor() {
         },
       }}
     />
-  )
+  );
 }
 ```
 
@@ -385,7 +385,7 @@ export default defineConfig({
       },
     },
   },
-})
+});
 ```
 
 ### Troubleshooting
